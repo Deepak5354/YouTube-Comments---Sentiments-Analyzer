@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Analysis Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar {
+            margin-bottom: 20px;
+        }
+        .sidebar a {
+            margin-right: 10px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .sidebar a:hover {
+            text-decoration: underline;
+        }
+        .comment {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .positive {
+            color: rgb(0, 128, 68);
+        }
+        .negative {
+            color: red;
+        }
+        .neutral {
+            color: gray;
+        }
+        .filter-buttons {
+            margin-top: 20px;
+        }
+        .filter-buttons button {
+            margin-right: 10px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .filter-buttons button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comment Analysis Results</h1>
+        <div class="sidebar">
+            <a href="#" onclick="filterComments('all')">All Comments</a>
+            <a href="#" onclick="filterComments('positive')">Positive Comments</a>
+            <a href="#" onclick="filterComments('negative')">Negative Comments</a>
+            <a href="#" onclick="filterComments('neutral')">Neutral Comments</a>
+        </div>
+        <div class="filter-buttons">
+            <button onclick="showTopComments('positive')">Top Positive Comments</button>
+            <button onclick="showTopComments('negative')">Top Negative Comments</button>
+            <button onclick="showTopComments('neutral')">Top Neutral Comments</button>
+        </div>
+        <div id="commentsContainer"></div>
+    </div>
+    <script>
+        let originalComments = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const comments = JSON.parse(localStorage.getItem('comments'));
+            originalComments = comments; // Store the original comments
+            const commentsContainer = document.getElementById('commentsContainer');
+            comments.forEach(commentData => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment', commentData.sentiment.toLowerCase());
+                commentElement.textContent = `${commentData.author}: ${commentData.comment} - Sentiment: ${commentData.sentiment}`;
+                commentsContainer.appendChild(commentElement);
+            });
+        });
+
+        function filterComments(sentiment) {
+            const commentsContainer = document.getElementById('commentsContainer');
+            commentsContainer.innerHTML = ''; // Clear existing comments
+            const comments = originalComments; // Use the original comments
+            comments.forEach(commentData => {
+                if (sentiment === 'all' || commentData.sentiment.toLowerCase() === sentiment) {
+                    const commentElement = document.createElement('div');
+                    commentElement.classList.add('comment', commentData.sentiment.toLowerCase());
+                    commentElement.textContent = `${commentData.author}: ${commentData.comment} - Sentiment: ${commentData.sentiment}`;
+                    commentsContainer.appendChild(commentElement);
+                }
+            });
+        }
+
+        function showTopComments(sentiment) {
+            const comments = originalComments.filter(comment => comment.sentiment.toLowerCase() === sentiment);
+            const topComments = comments.slice(0, 5); // Show top 5 comments
+            const commentsContainer = document.getElementById('commentsContainer');
+            commentsContainer.innerHTML = ''; // Clear existing comments
+            topComments.forEach(commentData => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment', commentData.sentiment.toLowerCase());
+                commentElement.textContent = `${commentData.author}: ${commentData.comment} - Sentiment: ${commentData.sentiment}`;
+                commentsContainer.appendChild(commentElement);
+            });
+        }
+    </script>
+</body>
+</html>

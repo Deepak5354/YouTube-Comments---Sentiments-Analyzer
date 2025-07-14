@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Sentiment Graphs</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        .chart-container {
+            width: 50%;
+            margin: auto;
+        }
+        .summary {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .total-comments {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Comment Sentiment Graphs</h1>
+    <div class="summary">
+        <p id="positiveSummary"></p>
+        <p id="negativeSummary"></p>
+        <p id="neutralSummary"></p>
+    </div>
+    <div class="chart-container">
+        <canvas id="barChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="pieChart"></canvas>
+    </div>
+    <div class="total-comments" id="totalComments"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const comments = JSON.parse(localStorage.getItem('comments'));
+            const sentimentCounts = { Positive: 0, Negative: 0, Neutral: 0 };
+
+            comments.forEach(commentData => {
+                sentimentCounts[commentData.sentiment]++;
+            });
+
+            const totalComments = comments.length;
+            const positivePercentage = ((sentimentCounts.Positive / totalComments) * 100).toFixed(2);
+            const negativePercentage = ((sentimentCounts.Negative / totalComments) * 100).toFixed(2);
+            const neutralPercentage = ((sentimentCounts.Neutral / totalComments) * 100).toFixed(2);
+
+            document.getElementById('positiveSummary').textContent = `Positive: ${sentimentCounts.Positive} (${positivePercentage}%)`;
+            document.getElementById('negativeSummary').textContent = `Negative: ${sentimentCounts.Negative} (${negativePercentage}%)`;
+            document.getElementById('neutralSummary').textContent = `Neutral: ${sentimentCounts.Neutral} (${neutralPercentage}%)`;
+            document.getElementById('totalComments').textContent = `Total Comments Analyzed: ${totalComments}`;
+
+            const barChartCtx = document.getElementById('barChart').getContext('2d');
+            const pieChartCtx = document.getElementById('pieChart').getContext('2d');
+
+            new Chart(barChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        label: '# of Comments',
+                        data: [sentimentCounts.Positive, sentimentCounts.Negative, sentimentCounts.Neutral],
+                        backgroundColor: ['rgb(0, 128, 68)', 'red', 'gray'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            new Chart(pieChartCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        label: '# of Comments',
+                        data: [sentimentCounts.Positive, sentimentCounts.Negative, sentimentCounts.Neutral],
+                        backgroundColor: ['rgb(0, 128, 68)', 'red', 'gray'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        datalabels: {
+                            formatter: (value, context) => {
+                                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(2) + '%';
+                                return percentage;
+                            },
+                            color: '#fff',
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        });
+    </script>
+</body>
+</html>

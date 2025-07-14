@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comment Analyzer</title>
+    <style>
+        body {
+            background: url('assets/image.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .container h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            padding: 10px;
+            font-size: 1em;
+            width: 300px;
+            border: none;
+            border-radius: 5px;
+        }
+        .input-group input:focus {
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #ffffff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #loadingScreen {
+            display: none;
+        }
+        .circle-loader {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Comment Analyzer</h1>
+
+        <!-- YouTube URL Input -->
+        <div class="input-group">
+            <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL" aria-label="Enter YouTube URL" />
+            <div id="errorMessage" style="color: red;"></div>
+        </div>
+
+        <!-- Buttons -->
+        <button onclick="analyzeComments()">Analyze Comments</button>
+        <button onclick="showGraph()">Show Graph</button>
+        <button onclick="exportResults()">Export Results</button>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen">
+            <div class="circle-loader"></div>
+            <p id="loadingMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+
+        function showLoading(message) {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const loadingMessage = document.getElementById('loadingMessage');
+            loadingMessage.textContent = message;
+            loadingScreen.style.display = 'block';
+        }
+
+        function hideLoading() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            loadingScreen.style.display = 'none';
+        }
+
+        document.getElementById('youtubeUrl').addEventListener('input', (e) => {
+            const isValid = youtubeRegex.test(e.target.value);
+            document.getElementById('errorMessage').textContent = isValid ? '' : 'Invalid YouTube URL!';
+        });
+
+        async function analyzeComments() {
+            const url = document.getElementById('youtubeUrl').value;
+            const errorMessageElement = document.getElementById('errorMessage');
+
+            if (!url) {
+                errorMessageElement.textContent = 'Please enter a YouTube URL!';
+                return;
+            }
+
+            if (!youtubeRegex.test(url)) {
+                errorMessageElement.textContent = 'Invalid input! Please enter a valid YouTube URL.';
+                return;
+            }
+
+            errorMessageElement.textContent = '';
+            showLoading("Analyzing comments...");
+
+            try {
+                const response = await fetch('http://localhost:5000/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                localStorage.setItem('comments', JSON.stringify(result.comments));
+                window.location.href = 'results.html';
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessageElement.textContent = 'An error occurred while analyzing comments: ' + error.message;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showGraph() {
+            const comments = localStorage.getItem('comments');
+            const url = document.getElementById('youtubeUrl').value;
+            const errorMessageElement = document.getElementById('errorMessage');
+
+            if (!comments) {
+                errorMessageElement.textContent = 'Please analyze comments first!';
+                return;
+            }
+
+            if (!youtubeRegex.test(url)) {
+                errorMessageElement.textContent = 'Invalid input! Please enter a valid YouTube URL.';
+                return;
+            }
+
+            window.location.href = 'graph.html';
+        }
+
+        function exportResults() {
+            const url = document.getElementById('youtubeUrl').value;
+            const comments = localStorage.getItem('comments');
+            const errorMessageElement = document.getElementById('errorMessage');
+
+            if (!youtubeRegex.test(url)) {
+                errorMessageElement.textContent = 'Invalid input! Please enter a valid YouTube URL.';
+                return;
+            }
+
+            if (!comments) {
+                alert('No comments to export!');
+                return;
+            }
+
+            const blob = new Blob([comments], { type: 'text/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'comments.json';
+            link.click();
+        }
+    </script>
+</body>
+</html>
